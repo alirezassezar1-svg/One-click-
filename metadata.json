@@ -1,0 +1,6 @@
+{
+  "name": "NONONICK UNIVERSAL CODE HUB",
+  "description": "Personal, browser-based, backend-free project management and real file transfer application with Google Drive, GitHub, OneDrive, and deployment integrations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,350 @@
+<div class="min-h-screen bg-[#060911] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/20 selection:text-cyan-300">
+  
+  <!-- OFFLINE FLOATING ALERT BANNER -->
+  @if (!isOnline()) {
+    <div class="fixed top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-2xl animate-bounce">
+      <mat-icon class="scale-75">cloud_off</mat-icon>
+      <span>{{ i18n.isRtl() ? 'حالت آفلاین: ارتباط اینترنتی قطع است. داده‌های محلی در دسترس هستند.' : 'Offline Mode: Operating from browser cache & IndexedDB.' }}</span>
+    </div>
+  }
+
+  <!-- TOP HEADER BAR -->
+  <header class="h-16 border-b border-white/10 glass-panel sticky top-0 z-40 px-4 flex items-center justify-between shrink-0">
+    
+    <!-- Left: Brand / Logo -->
+    <div class="flex items-center gap-3">
+      <!-- Mobile Menu Toggle Button -->
+      <button
+        (click)="mobileMenuOpen.set(!mobileMenuOpen())"
+        class="lg:hidden p-2 rounded-xl bg-slate-900 border border-white/10 text-slate-300 hover:text-white cursor-pointer"
+        aria-label="Toggle menu"
+      >
+        <mat-icon>{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
+      </button>
+
+      <button type="button" class="flex items-center gap-2.5 cursor-pointer text-left" (click)="navigateTo('dashboard')">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black shadow-md shadow-cyan-500/20">
+          <mat-icon class="scale-80">hub</mat-icon>
+        </div>
+        <div class="hidden sm:block">
+          <span class="font-bold text-sm tracking-tight text-white block leading-none">NONONICK</span>
+          <span class="text-[10px] font-mono tracking-wider text-cyan-400 font-semibold uppercase leading-none">CODE HUB</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- Center/Right: Actions, Status & Tools -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      
+      <!-- Primary Storage Status Badge -->
+      <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-white/10 text-xs font-mono">
+        <span
+          class="w-2 h-2 rounded-full"
+          [class.bg-emerald-400]="authSession.gdriveStatus() === 'connected'"
+          [class.bg-slate-500]="authSession.gdriveStatus() !== 'connected'"
+        ></span>
+        <span class="text-slate-300 text-[11px]">Drive:</span>
+        <span class="text-cyan-400 font-semibold text-[11px]">{{ authSession.gdriveStatus() === 'connected' ? 'OK' : 'DISCONNECTED' }}</span>
+      </div>
+
+      <!-- PWA Install Button -->
+      <app-pwa-install></app-pwa-install>
+
+      <!-- Language Toggle -->
+      <button
+        (click)="i18n.toggleLanguage()"
+        class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 hover:bg-cyan-900/40 text-xs font-semibold transition cursor-pointer"
+        title="Switch Language / تغییر زبان"
+      >
+        <mat-icon class="scale-75">language</mat-icon>
+        <span>{{ i18n.isRtl() ? 'English' : 'فارسی' }}</span>
+      </button>
+
+      <!-- Help / Setup Wizard Button -->
+      <button
+        (click)="openWizard()"
+        class="p-2 rounded-xl border border-white/10 bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white text-xs transition cursor-pointer"
+        title="First-Run Setup Wizard"
+      >
+        <mat-icon class="scale-80">auto_fix_high</mat-icon>
+      </button>
+
+      <!-- Security Purge Sessions -->
+      <button
+        (click)="authSession.purgeAllSessions()"
+        class="p-2 rounded-xl border border-red-500/20 bg-red-950/20 hover:bg-red-900/30 text-red-400 text-xs transition cursor-pointer"
+        title="Purge Active Session Tokens"
+      >
+        <mat-icon class="scale-80">lock_reset</mat-icon>
+      </button>
+
+    </div>
+  </header>
+
+  <!-- BODY: SIDEBAR + MAIN VIEW -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside
+      class="fixed lg:static inset-y-0 z-30 w-64 bg-[#080d1a] border-r border-white/10 p-4 flex flex-col justify-between transition-transform duration-300 lg:translate-x-0"
+      [class.translate-x-0]="mobileMenuOpen()"
+      [class.-translate-x-full]="!mobileMenuOpen() && !i18n.isRtl()"
+      [class.translate-x-full]="!mobileMenuOpen() && i18n.isRtl()"
+      [class.right-0]="i18n.isRtl()"
+      [class.left-0]="!i18n.isRtl()"
+    >
+      <div class="space-y-1 overflow-y-auto pr-1">
+        <div class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 px-3 pb-2 pt-1">
+          {{ i18n.isRtl() ? 'ماژول‌های اصلی' : 'Core Modules' }}
+        </div>
+
+        <!-- 1. Dashboard -->
+        <button
+          (click)="navigateTo('dashboard')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'dashboard'"
+          [class.text-cyan-300]="activeView() === 'dashboard'"
+          [class.border]="activeView() === 'dashboard'"
+          [class.border-cyan-500/30]="activeView() === 'dashboard'"
+          [class.text-slate-400]="activeView() !== 'dashboard'"
+          [class.hover:bg-slate-900]="activeView() !== 'dashboard'"
+          [class.hover:text-slate-200]="activeView() !== 'dashboard'"
+        >
+          <mat-icon class="scale-85">dashboard</mat-icon>
+          <span>{{ i18n.t('dashboard') }}</span>
+        </button>
+
+        <!-- 2. Project Manager -->
+        <button
+          (click)="navigateTo('projects')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'projects'"
+          [class.text-cyan-300]="activeView() === 'projects'"
+          [class.border]="activeView() === 'projects'"
+          [class.border-cyan-500/30]="activeView() === 'projects'"
+          [class.text-slate-400]="activeView() !== 'projects'"
+          [class.hover:bg-slate-900]="activeView() !== 'projects'"
+          [class.hover:text-slate-200]="activeView() !== 'projects'"
+        >
+          <mat-icon class="scale-85">folder_special</mat-icon>
+          <span>{{ i18n.t('projects') }}</span>
+        </button>
+
+        <!-- 3. File Explorer -->
+        <button
+          (click)="navigateTo('explorer')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'explorer'"
+          [class.text-cyan-300]="activeView() === 'explorer'"
+          [class.border]="activeView() === 'explorer'"
+          [class.border-cyan-500/30]="activeView() === 'explorer'"
+          [class.text-slate-400]="activeView() !== 'explorer'"
+          [class.hover:bg-slate-900]="activeView() !== 'explorer'"
+          [class.hover:text-slate-200]="activeView() !== 'explorer'"
+        >
+          <mat-icon class="scale-85">explore</mat-icon>
+          <span>{{ i18n.t('fileExplorer') }}</span>
+        </button>
+
+        <!-- 4. Transfer Center -->
+        <button
+          (click)="navigateTo('transfer')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'transfer'"
+          [class.text-cyan-300]="activeView() === 'transfer'"
+          [class.border]="activeView() === 'transfer'"
+          [class.border-cyan-500/30]="activeView() === 'transfer'"
+          [class.text-slate-400]="activeView() !== 'transfer'"
+          [class.hover:bg-slate-900]="activeView() !== 'transfer'"
+          [class.hover:text-slate-200]="activeView() !== 'transfer'"
+        >
+          <mat-icon class="scale-85">sync_alt</mat-icon>
+          <span>{{ i18n.t('transferCenter') }}</span>
+        </button>
+
+        <!-- 5. Provider Connections -->
+        <button
+          (click)="navigateTo('providers')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'providers'"
+          [class.text-cyan-300]="activeView() === 'providers'"
+          [class.border]="activeView() === 'providers'"
+          [class.border-cyan-500/30]="activeView() === 'providers'"
+          [class.text-slate-400]="activeView() !== 'providers'"
+          [class.hover:bg-slate-900]="activeView() !== 'providers'"
+          [class.hover:text-slate-200]="activeView() !== 'providers'"
+        >
+          <mat-icon class="scale-85">hub</mat-icon>
+          <span>{{ i18n.t('providers') }}</span>
+        </button>
+
+        <!-- 6. Deployment Center -->
+        <button
+          (click)="navigateTo('deployment')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'deployment'"
+          [class.text-cyan-300]="activeView() === 'deployment'"
+          [class.border]="activeView() === 'deployment'"
+          [class.border-cyan-500/30]="activeView() === 'deployment'"
+          [class.text-slate-400]="activeView() !== 'deployment'"
+          [class.hover:bg-slate-900]="activeView() !== 'deployment'"
+          [class.hover:text-slate-200]="activeView() !== 'deployment'"
+        >
+          <mat-icon class="scale-85">rocket_launch</mat-icon>
+          <span>{{ i18n.t('deployment') }}</span>
+        </button>
+
+        <!-- 7. Backup & Restore -->
+        <button
+          (click)="navigateTo('backup')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'backup'"
+          [class.text-cyan-300]="activeView() === 'backup'"
+          [class.border]="activeView() === 'backup'"
+          [class.border-cyan-500/30]="activeView() === 'backup'"
+          [class.text-slate-400]="activeView() !== 'backup'"
+          [class.hover:bg-slate-900]="activeView() !== 'backup'"
+          [class.hover:text-slate-200]="activeView() !== 'backup'"
+        >
+          <mat-icon class="scale-85">settings_backup_restore</mat-icon>
+          <span>{{ i18n.t('backupRestore') }}</span>
+        </button>
+
+        <!-- 8. Activity History -->
+        <button
+          (click)="navigateTo('activity')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'activity'"
+          [class.text-cyan-300]="activeView() === 'activity'"
+          [class.border]="activeView() === 'activity'"
+          [class.border-cyan-500/30]="activeView() === 'activity'"
+          [class.text-slate-400]="activeView() !== 'activity'"
+          [class.hover:bg-slate-900]="activeView() !== 'activity'"
+          [class.hover:text-slate-200]="activeView() !== 'activity'"
+        >
+          <mat-icon class="scale-85">history</mat-icon>
+          <span>{{ i18n.t('activityHistory') }}</span>
+        </button>
+
+        <!-- 9. Security Center -->
+        <button
+          (click)="navigateTo('security')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'security'"
+          [class.text-cyan-300]="activeView() === 'security'"
+          [class.border]="activeView() === 'security'"
+          [class.border-cyan-500/30]="activeView() === 'security'"
+          [class.text-slate-400]="activeView() !== 'security'"
+          [class.hover:bg-slate-900]="activeView() !== 'security'"
+          [class.hover:text-slate-200]="activeView() !== 'security'"
+        >
+          <mat-icon class="scale-85">shield</mat-icon>
+          <span>{{ i18n.t('securityCenter') }}</span>
+        </button>
+
+        <!-- 10. Acceptance Tests -->
+        <button
+          (click)="navigateTo('tests')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'tests'"
+          [class.text-cyan-300]="activeView() === 'tests'"
+          [class.border]="activeView() === 'tests'"
+          [class.border-cyan-500/30]="activeView() === 'tests'"
+          [class.text-slate-400]="activeView() !== 'tests'"
+          [class.hover:bg-slate-900]="activeView() !== 'tests'"
+          [class.hover:text-slate-200]="activeView() !== 'tests'"
+        >
+          <mat-icon class="scale-85">fact_check</mat-icon>
+          <span>{{ i18n.isRtl() ? 'آزمون‌های پذیرش' : 'Acceptance Tests' }}</span>
+        </button>
+
+        <!-- 11. Settings -->
+        <button
+          (click)="navigateTo('settings')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left"
+          [class.bg-cyan-500/15]="activeView() === 'settings'"
+          [class.text-cyan-300]="activeView() === 'settings'"
+          [class.border]="activeView() === 'settings'"
+          [class.border-cyan-500/30]="activeView() === 'settings'"
+          [class.text-slate-400]="activeView() !== 'settings'"
+          [class.hover:bg-slate-900]="activeView() !== 'settings'"
+          [class.hover:text-slate-200]="activeView() !== 'settings'"
+        >
+          <mat-icon class="scale-85">tune</mat-icon>
+          <span>{{ i18n.t('settings') }}</span>
+        </button>
+      </div>
+
+      <!-- Sidebar Footer: Storage & Security Badge -->
+      <div class="p-3 rounded-xl bg-slate-950/70 border border-white/5 space-y-1">
+        <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+          <span>{{ i18n.isRtl() ? 'ذخیره‌سازی' : 'Storage' }}</span>
+          <span class="text-cyan-400">IndexedDB</span>
+        </div>
+        <p class="text-[10px] text-slate-500 leading-tight">
+          {{ i18n.isRtl() ? 'بدون سرور واسط. کلیه داده‌ها در مرورگر رمزنگاری و نگهداری می‌شوند.' : 'Zero-backend. Tokens held in volatile RAM only.' }}
+        </p>
+      </div>
+    </aside>
+
+    <!-- Mobile Backdrop -->
+    @if (mobileMenuOpen()) {
+      <button
+        type="button"
+        (click)="mobileMenuOpen.set(false)"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden w-full h-full border-none cursor-default"
+        aria-label="Close navigation overlay"
+      ></button>
+    }
+
+    <!-- MAIN CONTENT VIEWPORT -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#060911]">
+      <div class="max-w-6xl mx-auto">
+        
+        @switch (activeView()) {
+          @case ('dashboard') {
+            <app-dashboard-view (navigateRequested)="navigateTo($event)"></app-dashboard-view>
+          }
+          @case ('projects') {
+            <app-projects-view></app-projects-view>
+          }
+          @case ('explorer') {
+            <app-explorer-view (transferInitiated)="onInitiateTransfer()"></app-explorer-view>
+          }
+          @case ('transfer') {
+            <app-transfer-view></app-transfer-view>
+          }
+          @case ('providers') {
+            <app-providers-view></app-providers-view>
+          }
+          @case ('deployment') {
+            <app-deployment-view></app-deployment-view>
+          }
+          @case ('backup') {
+            <app-backup-view></app-backup-view>
+          }
+          @case ('activity') {
+            <app-activity-view></app-activity-view>
+          }
+          @case ('security') {
+            <app-security-view></app-security-view>
+          }
+          @case ('tests') {
+            <app-tests-view></app-tests-view>
+          }
+          @case ('settings') {
+            <app-settings-view (reopenWizardRequested)="openWizard()"></app-settings-view>
+          }
+        }
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- SETUP WIZARD MODAL -->
+  @if (showSetupWizard()) {
+    <app-setup-wizard (wizardClosed)="closeWizard()"></app-setup-wizard>
+  }
+
+</div>
